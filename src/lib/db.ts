@@ -16,8 +16,15 @@ function getDb(): Client {
 async function ensureInit(): Promise<Client> {
   const client = getDb();
   if (!initialized) {
-    await initDb(client);
-    initialized = true;
+    try {
+      console.log("Initializing database...");
+      await initDb(client);
+      initialized = true;
+      console.log("Database initialized successfully");
+    } catch (error) {
+      console.error("Database initialization failed:", error);
+      throw error;
+    }
   }
   return client;
 }
