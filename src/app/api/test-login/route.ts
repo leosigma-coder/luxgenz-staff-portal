@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticateUser } from "@/lib/db";
 
-export async function POST() {
+export async function GET() {
   try {
     console.log("Test login: Starting authentication test");
     const user = await authenticateUser("Luxgenz", "R3bound");
