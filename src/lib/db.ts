@@ -56,8 +56,8 @@ export const EVENT_TYPES = [
 ] as const;
 
 async function initDb(client: Client) {
-  await client.executeMultiple(`
-    CREATE TABLE IF NOT EXISTS users (
+  const tables = [
+    `CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
@@ -68,9 +68,8 @@ async function initDb(client: Client) {
       last_password_reset TEXT,
       last_login TEXT,
       bio TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS updates (
+    )`,
+    `CREATE TABLE IF NOT EXISTS updates (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
       content TEXT NOT NULL,
@@ -80,9 +79,8 @@ async function initDb(client: Client) {
       status TEXT NOT NULL DEFAULT 'published',
       author TEXT NOT NULL,
       created_at TEXT DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS events (
+    )`,
+    `CREATE TABLE IF NOT EXISTS events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
       description TEXT NOT NULL,
@@ -91,18 +89,16 @@ async function initDb(client: Client) {
       event_type TEXT NOT NULL DEFAULT 'general',
       author TEXT NOT NULL,
       created_at TEXT DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS event_rsvps (
+    )`,
+    `CREATE TABLE IF NOT EXISTS event_rsvps (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       event_id INTEGER NOT NULL,
       user_id INTEGER NOT NULL,
       status TEXT NOT NULL CHECK(status IN ('attending', 'not_attending')),
       FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
       UNIQUE(event_id, user_id)
-    );
-
-    CREATE TABLE IF NOT EXISTS notifications (
+    )`,
+    `CREATE TABLE IF NOT EXISTS notifications (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
       type TEXT NOT NULL,
@@ -113,9 +109,8 @@ async function initDb(client: Client) {
       is_read INTEGER NOT NULL DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS docs (
+    )`,
+    `CREATE TABLE IF NOT EXISTS docs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
       content TEXT NOT NULL,
@@ -125,9 +120,8 @@ async function initDb(client: Client) {
       updated_by TEXT,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS tasks (
+    )`,
+    `CREATE TABLE IF NOT EXISTS tasks (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
       description TEXT,
@@ -139,18 +133,16 @@ async function initDb(client: Client) {
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS audit_logs (
+    )`,
+    `CREATE TABLE IF NOT EXISTS audit_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       action TEXT NOT NULL,
       target TEXT,
       performed_by TEXT NOT NULL,
       metadata TEXT,
       created_at TEXT DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS server_status (
+    )`,
+    `CREATE TABLE IF NOT EXISTS server_status (
       id INTEGER PRIMARY KEY CHECK (id = 1),
       online_players INTEGER NOT NULL DEFAULT 0,
       max_players INTEGER NOT NULL DEFAULT 0,
@@ -164,9 +156,8 @@ async function initDb(client: Client) {
       uptime_seconds INTEGER NOT NULL DEFAULT 0,
       server_version TEXT,
       last_heartbeat TEXT DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS plugin_events (
+    )`,
+    `CREATE TABLE IF NOT EXISTS plugin_events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       event_type TEXT NOT NULL,
       actor TEXT,
@@ -176,9 +167,8 @@ async function initDb(client: Client) {
       metadata TEXT,
       server TEXT,
       created_at TEXT DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS mc_punishments (
+    )`,
+    `CREATE TABLE IF NOT EXISTS mc_punishments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       punishment_type TEXT NOT NULL,
       player TEXT NOT NULL,
@@ -189,9 +179,8 @@ async function initDb(client: Client) {
       active INTEGER NOT NULL DEFAULT 1,
       created_at TEXT DEFAULT (datetime('now')),
       expires_at TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS mc_reports (
+    )`,
+    `CREATE TABLE IF NOT EXISTS mc_reports (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       reporter TEXT NOT NULL,
       target TEXT NOT NULL,
@@ -201,9 +190,8 @@ async function initDb(client: Client) {
       handled INTEGER NOT NULL DEFAULT 0,
       handled_by TEXT,
       created_at TEXT DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS mc_cases (
+    )`,
+    `CREATE TABLE IF NOT EXISTS mc_cases (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       case_id TEXT UNIQUE NOT NULL,
       player TEXT NOT NULL,
@@ -216,9 +204,8 @@ async function initDb(client: Client) {
       created_by TEXT NOT NULL,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS mc_staff_stats (
+    )`,
+    `CREATE TABLE IF NOT EXISTS mc_staff_stats (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
       mc_uuid TEXT,
@@ -232,8 +219,12 @@ async function initDb(client: Client) {
       playtime_mins INTEGER NOT NULL DEFAULT 0,
       last_online TEXT,
       updated_at TEXT DEFAULT (datetime('now'))
-    );
-  `);
+    )`,
+  ];
+
+  for (const sql of tables) {
+    await client.execute(sql);
+  }
 
   const owner = await client.execute("SELECT id FROM users WHERE role = 'owner'");
   if (owner.rows.length === 0) {
