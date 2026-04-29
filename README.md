@@ -1,6 +1,8 @@
 # Luxgenz Staff Portal
 
-A private staff management dashboard for Luxgenz. Built with Next.js, TypeScript, Tailwind CSS, and SQLite.
+A private staff management dashboard for Luxgenz. Built with Next.js, TypeScript, Tailwind CSS, and Turso (cloud SQLite).
+
+**Live Site:** https://luxgenzstaff.xyz
 
 ---
 
@@ -9,13 +11,16 @@ A private staff management dashboard for Luxgenz. Built with Next.js, TypeScript
 - **Framework:** Next.js 16 (App Router, Turbopack)
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS v4
-- **Database:** SQLite via better-sqlite3
+- **Database:** SQLite via @libsql/client (supports both local file and Turso cloud)
 - **Auth:** JWT sessions (jose) stored in httpOnly cookies
 - **Password Hashing:** bcryptjs
+- **Deployment:** Netlify (serverless functions)
 
 ---
 
 ## Getting Started
+
+### Local Development (SQLite File)
 
 ```bash
 npm install 
@@ -28,6 +33,32 @@ On first launch, the database (`staff.db`) is auto-created with the owner accoun
 
 - **Username:** `Luxgenz`
 - **Password:** `R3bound`
+
+### Production (Turso Cloud)
+
+1. **Install Turso CLI**
+   ```bash
+   winget install chiselapp.Turso
+   ```
+
+2. **Login and Create Database**
+   ```bash
+   turso auth login
+   turso db create staff-portal
+   turso db show staff-portal
+   ```
+
+3. **Set Environment Variables**
+   Create `.env.local`:
+   ```
+   TURSO_DATABASE_URL=your-turso-database-url
+   TURSO_AUTH_TOKEN=your-turso-auth-token
+   ```
+
+4. **Run the App**
+   ```bash
+   npm run dev
+   ```
 
 ---
 
@@ -574,14 +605,18 @@ The staff portal connects to the Minecraft Staff Plugin via HTTP API. The plugin
 ```yaml
 web_portal:
   enabled: true
-  url: "http://your-website-url:3000"
+  url: "https://luxgenzstaff.xyz"
   api_key: "luxgenz-plugin-key-2024"
   sync_interval: 30
 ```
 
-2. Optionally, set the `PLUGIN_API_KEY` environment variable on the website to match. Default is `luxgenz-plugin-key-2024`.
+2. Rebuild and restart the plugin. It will begin sending heartbeats every 30 seconds.
 
-3. Rebuild and restart the plugin. It will begin sending heartbeats every 30 seconds.
+3. The plugin will send real-time data to your live site including:
+   - Server status (players, TPS, uptime)
+   - Online staff list with modmode/vanish status
+   - Punishments, reports, and cases
+   - Staff statistics and activity
 
 ### API Endpoints (Plugin → Website)
 
